@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Photobooth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f7fc;
+    --bg-2:#eef1fa;
+    --surface:#ffffff;
+    --blue:#7f92cc;
+    --blue-deep:#6a7fc0;
+    --blue-pale:#e4e9f7;
+    --blue-pale-2:#dbe3f5;
+    --navy:#333a5c;
+    --text:#8b8fa3;
+    --line:#e2e6f3;
+    --white:#ffffff;
+    --shadow: 0 20px 45px rgba(102,116,180,.16);
+    --shadow-sm: 0 8px 20px rgba(102,116,180,.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    height:100%;
+    margin:0;
+    overflow:hidden;
+    background:var(--bg);
+    font-family:'Inter',sans-serif;
+    color:var(--navy);
+    -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit;cursor:pointer;}
+  .display{font-family:'Poppins',sans-serif;}
+
+  #shell{
+    height:100vh;
+    width:100vw;
+    display:flex;
+    flex-direction:column;
+    background:
+      radial-gradient(ellipse at 15% 0%, rgba(127,146,204,.10), transparent 55%),
+      radial-gradient(ellipse at 100% 100%, rgba(127,146,204,.08), transparent 50%),
+      var(--bg);
+    position:relative;
+  }
+
+  /* ---------- TOP BAR ---------- */
+  header.topbar{
+    flex:0 0 auto;
+    height:clamp(56px,8vh,74px);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 clamp(18px,3.5vw,44px);
+    background:var(--surface);
+    border-bottom:1px solid var(--line);
+    position:relative;
+    z-index:20;
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-dot{
+    width:12px;height:12px;border-radius:50%;
+    background:linear-gradient(135deg, #a9b8e4, var(--blue));
+    box-shadow:0 2px 6px rgba(127,146,204,.5);
+  }
+  .brand-name{
+    font-family:'Poppins',sans-serif;
+    font-weight:600;
+    font-size:clamp(14px,1.8vw,17px);
+    letter-spacing:.01em;
+    color:var(--navy);
+  }
+  .topbar-right{position:relative;}
+  .help-btn{
+    width:30px;height:30px;
+    border-radius:50%;
+    border:1.5px solid var(--blue-pale-2);
+    background:var(--bg-2);
+    color:var(--blue-deep);
+    font-weight:600;
+    font-size:13px;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .15s ease, transform .15s ease;
+  }
+  .help-btn:hover{background:var(--blue-pale);transform:translateY(-1px);}
+  .help-panel{
+    position:absolute;
+    top:calc(100% + 12px);
+    right:0;
+    width:min(280px,80vw);
+    background:var(--surface);
+    color:var(--navy);
+    border-radius:18px;
+    padding:18px 20px;
+    box-shadow:var(--shadow);
+    border:1px solid var(--line);
+    z-index:50;
+    font-size:13.5px;
+    line-height:1.55;
+  }
+  .help-panel h3{margin:0 0 10px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;letter-spacing:.02em;color:var(--blue-deep);}
+  .help-panel ol{margin:0;padding-left:18px;color:var(--text);}
+  .help-panel li{margin-bottom:6px;}
+  .help-panel li::marker{color:var(--blue);font-weight:600;}
+  .hidden{display:none !important;}
+
+  /* ---------- STAGE / SCREENS ---------- */
+  main#stage{
+    flex:1 1 auto;
+    min-height:0;
+    display:flex;
+    position:relative;
+  }
+  .screen{
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    height:100%;
+    padding:clamp(10px,2vh,26px) clamp(14px,3vw,40px);
+    gap:clamp(10px,1.8vh,20px);
+  }
+  .screen.active{display:flex;}
+
+  .subtitle{
+    font-family:'Inter',sans-serif;
+    font-weight:500;
+    font-size:clamp(12px,1.3vw,14.5px);
+    color:var(--text);
+    text-align:center;
+    letter-spacing:.01em;
+  }
+
+  /* ---------- CAMERA WINDOW ---------- */
+  .cam-frame{
+    position:relative;
+    border:1px solid var(--line);
+    border-radius:32px;
+    background:#0e1220;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+    flex:0 1 auto;
+    height:min(52vh,440px);
+    aspect-ratio:4/3;
+    max-width:88vw;
+  }
+  video#video, video#videoCapture{
+    width:100%; height:100%;
+    object-fit:cover;
+    transform:scaleX(-1);
+    display:block;
+    background:#0e1220;
+  }
+  .cam-placeholder{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    flex-direction:column;gap:12px;
+    color:#c7cde6;
+    text-align:center;
+    padding:24px;
+    font-size:13.5px;
+    background:#151a2c;
+    z-index:2;
+  }
+  .cam-placeholder button{
+    margin-top:4px;
+    padding:9px 20px;
+    border-radius:999px;
+    border:none;
+    background:var(--blue);
+    color:#fff;
+    font-size:12.5px;
+    font-weight:600;
+  }
+
+  #countdownNum{
+    position:absolute;
+    inset:0;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Poppins',sans-serif;
+    font-weight:600;
+    font-size:clamp(60px,14vw,140px);
+    color:#ffffff;
+    text-shadow:0 6px 30px rgba(0,0,0,.45);
+    z-index:5;
+    pointer-events:none;
+  }
+  #shotCounter{
+    position:absolute;
+    top:12px;left:12px;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:12px;
+    color:var(--navy);
+    background:rgba(255,255,255,.92);
+    padding:5px 12px;
+    border-radius:999px;
+    z-index:6;
+    letter-spacing:.02em;
+    box-shadow:var(--shadow-sm);
+  }
+  #flashOverlay{
+    position:absolute;inset:0;
+    background:#fff;
+    opacity:0;
+    z-index:7;
+    pointer-events:none;
+  }
+  .flash-anim{animation:flashPop .32s ease-out;}
+  @keyframes flashPop{
+    0%{opacity:.9;}
+    100%{opacity:0;}
+  }
+
+  /* thumbnail rail during capture */
+  #thumbRail{
+    display:flex;
+    gap:8px;
+    height:clamp(34px,5vh,54px);
+    align-items:center;
+  }
+  #thumbRail .thumb{
+    width:clamp(34px,5vh,54px);
+    height:100%;
+    border-radius:12px;
+    object-fit:cover;
+    border:2px solid var(--surface);
+    box-shadow:var(--shadow-sm);
+    opacity:0;
+    animation:thumbIn .3s ease forwards;
+  }
+  @keyframes thumbIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  /* ---------- SETUP CONTROLS ---------- */
+  .setup-controls{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:clamp(10px,1.6vh,16px);
+    width:100%;
+    max-width:420px;
+  }
+  .range-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    width:100%;
+    justify-content:center;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:12px;
+    color:var(--text);
+    letter-spacing:.04em;
+  }
+  input[type=range]{
+    -webkit-appearance:none;
+    width:180px;
+    height:5px;
+    border-radius:4px;
+    background:var(--blue-pale-2);
+    outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:18px;height:18px;border-radius:50%;
+    background:var(--blue);
+    border:3px solid var(--surface);
+    cursor:pointer;
+    box-shadow:var(--shadow-sm);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:18px;height:18px;border-radius:50%;
+    background:var(--blue);
+    border:3px solid var(--surface);
+    cursor:pointer;
+    box-shadow:var(--shadow-sm);
+  }
+  #countdownReadout{color:var(--navy);font-weight:700;min-width:34px;text-align:left;}
+
+  .shutter-btn{
+    width:clamp(68px,9vh,84px);
+    height:clamp(68px,9vh,84px);
+    border-radius:50%;
+    background:linear-gradient(150deg,#a7b6e6,var(--blue) 70%);
+    border:5px solid var(--surface);
+    box-shadow:var(--shadow);
+    position:relative;
+    transition:transform .12s ease;
+  }
+  .shutter-btn:hover{transform:scale(1.05);}
+  .shutter-btn:active{transform:scale(.95);}
+  .shutter-btn::after{
+    content:'';
+    position:absolute;
+    inset:32%;
+    border-radius:50%;
+    background:#fff;
+    box-shadow:inset 0 2px 4px rgba(102,116,180,.25);
+  }
+  .shutter-caption{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:11.5px;
+    color:var(--text);
+    letter-spacing:.05em;
+  }
+  .shutter-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  /* ---------- SELECT SCREEN ---------- */
+  #screen-select{flex-direction:row;align-items:stretch;gap:clamp(18px,3vw,44px);}
+  .select-left{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    flex:1.3;
+    min-width:0;
+  }
+  #grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    grid-template-rows:repeat(2,1fr);
+    gap:clamp(8px,1.1vw,14px);
+    width:100%;
+    max-width:560px;
+    height:min(48vh,340px);
+  }
+  .grid-item{
+    position:relative;
+    border-radius:18px;
+    overflow:hidden;
+    border:2px solid var(--line);
+    background:var(--surface);
+    padding:0;
+    box-shadow:var(--shadow-sm);
+  }
+  .grid-item img{
+    width:100%;height:100%;object-fit:cover;display:block;
+    filter:saturate(.9) brightness(.97);
+    transition:filter .15s ease;
+  }
+  .grid-item.picked img{filter:none;}
+  .grid-item:hover img{filter:none;}
+  .grid-item .badge{
+    position:absolute;
+    top:6px;left:6px;
+    width:24px;height:24px;
+    border-radius:50%;
+    background:var(--blue);
+    color:#fff;
+    font-family:'Poppins',sans-serif;
+    font-weight:600;
+    font-size:12px;
+    display:none;
+    align-items:center;justify-content:center;
+    box-shadow:0 3px 8px rgba(102,116,180,.5);
+  }
+  .grid-item.picked .badge{display:flex;}
+  .grid-item.picked{border-color:var(--blue);}
+
+  .select-right{
+    flex:0 0 auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+  }
+  .strip{
+    background:var(--surface);
+    color:var(--navy);
+    border-radius:22px;
+    padding:14px 14px 16px;
+    width:clamp(96px,12vw,132px);
+    box-shadow:var(--shadow);
+    border:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    position:relative;
+  }
+  .strip-title{
+    font-family:'Poppins',sans-serif;
+    font-weight:600;
+    font-size:11px;
+    text-align:center;
+    letter-spacing:.02em;
+    color:var(--blue-deep);
+  }
+  .strip-slot{
+    width:100%;
+    aspect-ratio:4/3;
+    background:var(--bg-2);
+    border:1.5px dashed var(--blue-pale-2);
+    border-radius:12px;
+    overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:11px;
+    color:#b7bdd6;
+  }
+  .strip-slot img{width:100%;height:100%;object-fit:cover;display:block;}
+  .strip-date{
+    text-align:center;
+    font-family:'Inter',sans-serif;
+    font-size:8.5px;
+    color:#b7bdd6;
+    letter-spacing:.04em;
+  }
+
+  .btn-row{display:flex;gap:12px;align-items:center;}
+  .btn{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    padding:11px 24px;
+    border-radius:999px;
+    border:1.5px solid var(--blue-pale-2);
+    background:var(--surface);
+    color:var(--navy);
+    transition:all .15s ease;
+    box-shadow:var(--shadow-sm);
+  }
+  .btn:hover{background:var(--blue-pale);border-color:var(--blue-pale-2);transform:translateY(-1px);}
+  .btn.primary{
+    background:var(--blue);
+    color:#fff;
+    border-color:var(--blue);
+  }
+  .btn.primary:hover{background:var(--blue-deep);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none;background:var(--surface);color:var(--text);}
+  .btn.ghost{border-color:transparent;color:var(--text);box-shadow:none;}
+  .btn.ghost:hover{background:var(--bg-2);}
+
+  #toast{
+    position:absolute;
+    bottom:16px;left:50%;
+    transform:translateX(-50%);
+    background:var(--navy);
+    color:#fff;
+    padding:9px 20px;
+    border-radius:999px;
+    font-size:12.5px;
+    font-weight:500;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease;
+    z-index:40;
+    box-shadow:var(--shadow);
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+
+  /* ---------- MODAL ---------- */
+  .modal-backdrop{
+    position:fixed;inset:0;
+    background:rgba(51,58,92,.35);
+    backdrop-filter:blur(2px);
+    display:flex;align-items:center;justify-content:center;
+    z-index:100;
+  }
+  .modal-card{
+    background:var(--surface);
+    color:var(--navy);
+    border-radius:26px;
+    padding:30px 30px;
+    width:min(370px,88vw);
+    box-shadow:var(--shadow);
+    position:relative;
+  }
+  .modal-card h2{
+    margin:0 0 8px;
+    font-family:'Poppins',sans-serif;
+    font-weight:600;
+    font-size:21px;
+    letter-spacing:.01em;
+    color:var(--navy);
+  }
+  .modal-card p{margin:0 0 18px;font-size:13.5px;color:var(--text);line-height:1.55;}
+  .modal-card input{
+    width:100%;
+    padding:13px 16px;
+    border-radius:14px;
+    border:1.5px solid var(--blue-pale-2);
+    font-size:14px;
+    font-family:'Inter',sans-serif;
+    margin-bottom:16px;
+    background:var(--bg-2);
+    color:var(--navy);
+  }
+  .modal-card input:focus{outline:none;border-color:var(--blue);background:var(--surface);}
+  .modal-close{
+    position:absolute; top:16px; right:18px;
+    background:none;border:none;font-size:19px;color:var(--text);
+  }
+  .modal-actions{display:flex;flex-direction:column;gap:10px;}
+  .link-btn{background:none;border:none;color:var(--text);font-size:12.5px;text-decoration:underline;padding:4px;}
+
+  /* ---------- PRINTING SCREEN ---------- */
+  #screen-printing{position:relative;justify-content:flex-start;padding-top:clamp(20px,4vh,50px);}
+  .printer{
+    position:relative;
+    width:min(210px,42vw);
+    height:44%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-end;
+  }
+  .slot{
+    width:100%;
+    height:16px;
+    background:linear-gradient(180deg,#dbe2f5,#c6cfec);
+    border-radius:999px;
+    box-shadow:inset 0 3px 6px rgba(102,116,180,.35);
+    z-index:5;
+  }
+  #printStrip{
+    position:absolute;
+    bottom:10px;
+    background:var(--surface);
+    color:var(--navy);
+    border-radius:22px;
+    padding:14px 14px 16px;
+    width:100%;
+    box-shadow:var(--shadow);
+    border:1px solid var(--line);
+    display:flex;flex-direction:column;gap:8px;
+    transform:translateY(94%);
+    transition:transform 2.1s cubic-bezier(.2,.8,.2,1);
+    z-index:2;
+  }
+  #printStrip.out{transform:translateY(-8%);}
+  #printStrip .strip-slot img{width:100%;height:100%;object-fit:cover;}
+
+  #printCaption{
+    font-family:'Inter',sans-serif;
+    font-weight:500;
+    font-size:13.5px;
+    color:var(--text);
+    text-align:center;
+    min-height:20px;
+  }
+  .dots span{
+    display:inline-block;width:6px;height:6px;border-radius:50%;
+    background:var(--blue);margin:0 3px;
+    animation:dotPulse 1.2s ease-in-out infinite;
+  }
+  .dots span:nth-child(2){animation-delay:.2s;}
+  .dots span:nth-child(3){animation-delay:.4s;}
+  @keyframes dotPulse{0%,80%,100%{opacity:.25;}40%{opacity:1;}}
+
+  .print-actions{display:flex;gap:10px;opacity:0;transition:opacity .4s ease;}
+  .print-actions.show{opacity:1;}
+
+  @media (prefers-reduced-motion: reduce){
+    #printStrip{transition:none;}
+    .flash-anim{animation:none;}
+  }
+
+  @media (max-width:760px){
+    #screen-select{flex-direction:column;overflow:hidden;}
+    #grid{height:auto;max-height:34vh;}
+  }
+</style>
+</head>
+<body>
+<div id="shell">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span class="brand-name display">Photobooth</span>
+    </div>
+    <div class="topbar-right">
+      <button class="help-btn" id="helpBtn" aria-label="How it works">?</button>
+      <div class="help-panel hidden" id="helpPanel">
+        <h3>How it works</h3>
+        <ol>
+          <li>Set your countdown time, then hit the shutter.</li>
+          <li>Strike a pose — we'll take 8 photos back to back.</li>
+          <li>Pick your favorite 4, tapping them in the order you want on the strip.</li>
+          <li>Enter an email or phone number and we'll get your strip ready.</li>
+        </ol>
+      </div>
+    </div>
+  </header>
+
+  <main id="stage">
+
+    <!-- SETUP -->
+    <section class="screen active" id="screen-setup">
+      <div class="cam-frame" id="camFrameSetup">
+        <video id="video" autoplay playsinline muted></video>
+        <div class="cam-placeholder hidden" id="camError">
+          <span>Camera access needed to start your session.</span>
+          <button id="retryCamBtn">Enable camera</button>
+        </div>
+      </div>
+      <div class="subtitle">Step into the booth · 8 shots, then pick your favorite 4</div>
+      <div class="setup-controls">
+        <div class="range-row">
+          <span>COUNTDOWN</span>
+          <input type="range" id="countdownRange" min="3" max="15" value="10" step="1">
+          <span id="countdownReadout">10s</span>
+        </div>
+        <button class="shutter-btn" id="startBtn" aria-label="Start session"></button>
+        <div class="shutter-caption">TAP TO BEGIN</div>
+      </div>
+    </section>
+
+    <!-- CAPTURE -->
+    <section class="screen" id="screen-capture">
+      <div class="cam-frame" id="camFrameCapture">
+        <video id="videoCapture" autoplay playsinline muted></video>
+        <div id="countdownNum" class="display"></div>
+        <div id="shotCounter">SHOT 1 / 8</div>
+        <div id="flashOverlay"></div>
+      </div>
+      <div id="thumbRail"></div>
+    </section>
+
+    <!-- SELECT -->
+    <section class="screen" id="screen-select">
+      <div class="select-left">
+        <div class="subtitle" id="selectHint">Tap 4 photos, in the order you'd like them on your strip</div>
+        <div id="grid"></div>
+        <div class="btn-row">
+          <button class="btn" id="resetSelBtn">Reset</button>
+          <button class="btn primary" id="doneBtn" disabled>Done</button>
+        </div>
+      </div>
+      <div class="select-right">
+        <div class="strip" id="stripPreview">
+          <div class="strip-title display">Photobooth</div>
+          <div class="strip-slot" data-slot="0">1</div>
+          <div class="strip-slot" data-slot="1">2</div>
+          <div class="strip-slot" data-slot="2">3</div>
+          <div class="strip-slot" data-slot="3">4</div>
+          <div class="strip-date" id="stripDate"></div>
+        </div>
+      </div>
+      <div id="toast"></div>
+    </section>
+
+    <!-- PRINTING -->
+    <section class="screen" id="screen-printing">
+      <div class="subtitle" style="margin-bottom:6px;">Your strip</div>
+      <div class="printer">
+        <div id="printStrip">
+          <div class="strip-title display">Photobooth</div>
+          <div class="strip-slot" data-pslot="0"></div>
+          <div class="strip-slot" data-pslot="1"></div>
+          <div class="strip-slot" data-pslot="2"></div>
+          <div class="strip-slot" data-pslot="3"></div>
+          <div class="strip-date" id="printDate"></div>
+        </div>
+        <div class="slot"></div>
+      </div>
+      <div id="printCaption">Developing your photos <span class="dots"><span></span><span></span><span></span></span></div>
+      <div class="print-actions" id="printActions">
+        <button class="btn primary" id="downloadBtn">Download strip</button>
+        <button class="btn ghost" id="restartBtn">Start over</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- CONTACT MODAL -->
+  <div class="modal-backdrop hidden" id="contactModal">
+    <div class="modal-card">
+      <button class="modal-close" id="modalCloseBtn" aria-label="Close">&times;</button>
+      <h2 class="display">Get your strip</h2>
+      <p>Enter an email or phone number and we'll get your photo strip ready for you.</p>
+      <input type="text" id="contactInput" placeholder="you@email.com or (555) 123-4567" autocomplete="off">
+      <div class="modal-actions">
+        <button class="btn primary" id="sendBtn">Send my photos</button>
+        <button class="link-btn" id="skipBtn">Skip for now</button>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="captureCanvas" class="hidden"></canvas>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- STATE ----------
+  let stream = null;
+  let countdownSeconds = 10;
+  let photos = [];              // dataURLs, up to 8
+  let shotIndex = 0;
+  let countdownTimer = null;
+  let selectedOrder = [];       // indices into photos[], length up to 4
+  let contactValue = "";
+
+  // ---------- ELEMENTS ----------
+  const $ = id => document.getElementById(id);
+  const video = $('video');
+  const videoCapture = $('videoCapture');
+  const canvas = $('captureCanvas');
+  const screens = {
+    setup: $('screen-setup'),
+    capture: $('screen-capture'),
+    select: $('screen-select'),
+    printing: $('screen-printing')
+  };
+
+  function showScreen(name){
+    Object.values(screens).forEach(s => s.classList.remove('active'));
+    screens[name].classList.add('active');
+  }
+
+  // ---------- HELP TOOLTIP ----------
+  const helpBtn = $('helpBtn'), helpPanel = $('helpPanel');
+  helpBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    helpPanel.classList.toggle('hidden');
+  });
+  document.addEventListener('click', (e) => {
+    if(!helpPanel.contains(e.target) && e.target !== helpBtn){
+      helpPanel.classList.add('hidden');
+    }
+  });
+
+  // ---------- CAMERA ----------
+  async function initCamera(){
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: {ideal:960}, height:{ideal:720} }, audio:false });
+      video.srcObject = stream;
+      videoCapture.srcObject = stream;
+      $('camError').classList.add('hidden');
+      $('startBtn').disabled = false;
+    }catch(err){
+      $('camError').classList.remove('hidden');
+      $('startBtn').disabled = true;
+    }
+  }
+  $('retryCamBtn').addEventListener('click', initCamera);
+  initCamera();
+
+  // ---------- COUNTDOWN SETTING ----------
+  const range = $('countdownRange');
+  range.addEventListener('input', () => {
+    countdownSeconds = parseInt(range.value, 10);
+    $('countdownReadout').textContent = countdownSeconds + 's';
+  });
+
+  // ---------- CAPTURE FLOW ----------
+  $('startBtn').addEventListener('click', () => {
+    if(!stream) return;
+    photos = [];
+    shotIndex = 0;
+    showScreen('capture');
+    $('thumbRail').innerHTML = '';
+    runCountdownForShot();
+  });
+
+  function runCountdownForShot(){
+    $('shotCounter').textContent = `SHOT ${shotIndex+1} / 8`;
+    let remaining = countdownSeconds;
+    $('countdownNum').textContent = remaining;
+    clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
+      remaining -= 1;
+      if(remaining > 0){
+        $('countdownNum').textContent = remaining;
+      } else {
+        clearInterval(countdownTimer);
+        $('countdownNum').textContent = '';
+        takePhoto();
+      }
+    }, 1000);
+  }
+
+  function takePhoto(){
+    const flashEl = $('flashOverlay');
+    flashEl.classList.remove('flash-anim');
+    void flashEl.offsetWidth;
+    flashEl.classList.add('flash-anim');
+
+    const vw = videoCapture.videoWidth || 640;
+    const vh = videoCapture.videoHeight || 480;
+    canvas.width = vw;
+    canvas.height = vh;
+    const ctx = canvas.getContext('2d');
+    ctx.translate(vw, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(videoCapture, 0, 0, vw, vh);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    photos.push(dataUrl);
+
+    const thumb = document.createElement('img');
+    thumb.src = dataUrl;
+    thumb.className = 'thumb';
+    thumb.style.animationDelay = '0s';
+    $('thumbRail').appendChild(thumb);
+
+    shotIndex++;
+    if(shotIndex < 8){
+      setTimeout(runCountdownForShot, 900);
+    } else {
+      setTimeout(() => {
+        stopStream();
+        buildSelectGrid();
+        showScreen('select');
+      }, 700);
+    }
+  }
+
+  function stopStream(){
+    if(stream){
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+    }
+  }
+
+  // ---------- SELECT SCREEN ----------
+  const grid = $('grid');
+  const doneBtn = $('doneBtn');
+  const toast = $('toast');
+
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toast.classList.remove('show'), 1600);
+  }
+
+  function buildSelectGrid(){
+    grid.innerHTML = '';
+    selectedOrder = [];
+    photos.forEach((src, i) => {
+      const item = document.createElement('button');
+      item.className = 'grid-item';
+      item.setAttribute('aria-label', `Photo ${i+1}`);
+      item.innerHTML = `<img src="${src}"><span class="badge"></span>`;
+      item.addEventListener('click', () => togglePick(i, item));
+      grid.appendChild(item);
+    });
+    updateStripPreview();
+    updateDoneState();
+  }
+
+  function togglePick(i, el){
+    const pos = selectedOrder.indexOf(i);
+    if(pos > -1){
+      selectedOrder.splice(pos, 1);
+    } else {
+      if(selectedOrder.length >= 4){
+        showToast('You have 4 already — tap one to remove it first');
+        return;
+      }
+      selectedOrder.push(i);
+    }
+    refreshGridBadges();
+    updateStripPreview();
+    updateDoneState();
+  }
+
+  function refreshGridBadges(){
+    Array.from(grid.children).forEach((item, i) => {
+      const pos = selectedOrder.indexOf(i);
+      const badge = item.querySelector('.badge');
+      if(pos > -1){
+        item.classList.add('picked');
+        badge.textContent = pos + 1;
+      } else {
+        item.classList.remove('picked');
+        badge.textContent = '';
+      }
+    });
+  }
+
+  function dateStamp(){
+    const d = new Date();
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    const yy = String(d.getFullYear()).slice(-2);
+    return `${mm}.${dd}.${yy}`;
+  }
+
+  function updateStripPreview(){
+    const slots = $('stripPreview').querySelectorAll('.strip-slot');
+    slots.forEach((slot, i) => {
+      if(selectedOrder[i] !== undefined){
+        slot.innerHTML = `<img src="${photos[selectedOrder[i]]}">`;
+      } else {
+        slot.innerHTML = String(i+1);
+      }
+    });
+    $('stripDate').textContent = dateStamp();
+  }
+
+  function updateDoneState(){
+    doneBtn.disabled = selectedOrder.length !== 4;
+  }
+
+  $('resetSelBtn').addEventListener('click', () => {
+    selectedOrder = [];
+    refreshGridBadges();
+    updateStripPreview();
+    updateDoneState();
+  });
+
+  doneBtn.addEventListener('click', () => {
+    $('contactModal').classList.remove('hidden');
+    $('contactInput').focus();
+  });
+
+  // ---------- CONTACT MODAL ----------
+  $('modalCloseBtn').addEventListener('click', () => $('contactModal').classList.add('hidden'));
+  $('skipBtn').addEventListener('click', () => {
+    contactValue = '';
+    $('contactModal').classList.add('hidden');
+    goToPrinting();
+  });
+  $('sendBtn').addEventListener('click', () => {
+    const val = $('contactInput').value.trim();
+    if(!val){
+      $('contactInput').style.borderColor = '#c96b6b';
+      return;
+    }
+    contactValue = val;
+    $('contactModal').classList.add('hidden');
+    goToPrinting();
+  });
+
+  // ---------- PRINTING SCREEN ----------
+  function goToPrinting(){
+    const slots = document.querySelectorAll('#printStrip .strip-slot');
+    slots.forEach((slot, i) => {
+      slot.innerHTML = selectedOrder[i] !== undefined ? `<img src="${photos[selectedOrder[i]]}">` : '';
+    });
+    $('printDate').textContent = dateStamp();
+    $('printCaption').innerHTML = 'Developing your photos <span class="dots"><span></span><span></span><span></span></span>';
+    $('printActions').classList.remove('show');
+    const strip = $('printStrip');
+    strip.classList.remove('out');
+    void strip.offsetWidth;
+
+    showScreen('printing');
+
+    setTimeout(() => strip.classList.add('out'), 150);
+    setTimeout(() => {
+      const dest = contactValue ? contactValue : 'you';
+      $('printCaption').textContent = contactValue
+        ? `Sent to ${dest} ✓ (demo — download below to keep it)`
+        : `Ready ✓ — download your strip below`;
+      $('printActions').classList.add('show');
+    }, 2300);
+  }
+
+  // ---------- DOWNLOAD ----------
+  $('downloadBtn').addEventListener('click', () => {
+    downloadStripImage();
+  });
+
+  function downloadStripImage(){
+    const W = 500, PAD = 28, GAP = 16;
+    const photoH = Math.round((W - PAD*2) * 0.75);
+    const headerH = 62;
+    const footerH = 46;
+    const H = headerH + (photoH+GAP)*4 + footerH;
+
+    const out = document.createElement('canvas');
+    out.width = W; out.height = H;
+    const ctx = out.getContext('2d');
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = '#f6f7fc';
+    ctx.fillRect(0,0,W,headerH);
+
+    ctx.fillStyle = '#5f72b5';
+    ctx.textAlign = 'center';
+    ctx.font = "600 24px 'Poppins', sans-serif";
+    ctx.fillText('Photobooth', W/2, 40);
+
+    function drawSlot(img, x, y, w, h){
+      const ir = img.width / img.height;
+      const sr = w / h;
+      let sx, sy, sw, sh;
+      if(ir > sr){ sh = img.height; sw = sh*sr; sx=(img.width-sw)/2; sy=0; }
+      else{ sw = img.width; sh = sw/sr; sx=0; sy=(img.height-sh)/2; }
+      const r = 14;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x+r,y);
+      ctx.arcTo(x+w,y,x+w,y+h,r);
+      ctx.arcTo(x+w,y+h,x,y+h,r);
+      ctx.arcTo(x,y+h,x,y,r);
+      ctx.arcTo(x,y,x+w,y,r);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+      ctx.restore();
+      ctx.strokeStyle = '#e2e6f3';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    const imgs = selectedOrder.map(i => {
+      const im = new Image();
+      im.src = photos[i];
+      return im;
+    });
+
+    let loaded = 0;
+    imgs.forEach(im => {
+      if(im.complete) loaded++;
+      im.onload = () => { loaded++; maybeFinish(); };
+    });
+    maybeFinish();
+
+    function maybeFinish(){
+      if(loaded < imgs.length) return;
+      imgs.forEach((im, i) => {
+        const y = headerH + i*(photoH+GAP);
+        drawSlot(im, PAD, y, W-PAD*2, photoH);
+      });
+      ctx.fillStyle = '#b7bdd6';
+      ctx.font = "12px 'Inter', sans-serif";
+      ctx.fillText(dateStamp() + '  ·  made in the booth', W/2, H-18);
+
+      const link = document.createElement('a');
+      link.download = 'photo-strip.png';
+      link.href = out.toDataURL('image/png');
+      link.click();
+    }
+  }
+
+  // ---------- RESTART ----------
+  $('restartBtn').addEventListener('click', () => {
+    photos = [];
+    selectedOrder = [];
+    contactValue = '';
+    $('contactInput').value = '';
+    $('contactInput').style.borderColor = '';
+    showScreen('setup');
+    initCamera();
+  });
+
+})();
+</script>
+</body>
+</html>
