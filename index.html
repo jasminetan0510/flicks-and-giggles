@@ -22,11 +22,11 @@
       <div class="help-panel hidden" id="helpPanel">
         <h3>How it works</h3>
         <ol>
-          <li>Pick a character frame (or none) for your strip.</li>
-          <li>Optionally add pose inspo to reference while you shoot.</li>
-          <li>Set your countdown time, then hit the shutter.</li>
-          <li>Line your face up in the hole — we'll take 8 photos back to back.</li>
+          <li>Pick a countdown length and, if you like, a pose-inspo strip to shoot alongside.</li>
+          <li>Hit the shutter — we'll take 8 photos back to back, with a beep for the last 3 seconds of each countdown.</li>
           <li>Pick your favorite 4, tapping them in the order you want on the strip.</li>
+          <li>Drag stickers onto your finished strip to decorate it — drag the corner handle to resize, or tap × to remove.</li>
+          <li>Pick a strip background color if you'd like one.</li>
           <li>Enter an email or phone number and we'll get your strip ready.</li>
         </ol>
       </div>
@@ -35,24 +35,11 @@
 
   <main id="stage">
 
-    <!-- THEME PICKER -->
-    <section class="screen active" id="screen-theme">
-      <div class="subtitle">Pick a frame for your photo strip</div>
-      <div id="themeGrid"></div>
-      <div class="theme-actions">
-        <button class="btn primary" id="themeContinueBtn" disabled>Continue</button>
-        <button class="inspo-btn" id="inspoBtn">
-          <span id="inspoBtnLabel">+ Add pose inspo (optional)</span>
-        </button>
-      </div>
-    </section>
-
     <!-- SETUP -->
-    <section class="screen" id="screen-setup">
+    <section class="screen active" id="screen-setup">
       <div class="cam-row">
         <div class="cam-frame" id="camFrameSetup">
           <video id="video" autoplay playsinline muted></video>
-          <img class="frame-overlay hidden" id="frameOverlaySetup" alt="">
           <div class="cam-placeholder hidden" id="camError">
             <span>Camera access needed to start your session.</span>
             <button id="retryCamBtn">Enable camera</button>
@@ -68,14 +55,16 @@
       </div>
       <div class="subtitle">Step into the booth · 8 shots, then pick your favorite 4</div>
       <div class="setup-controls">
-        <div class="range-row">
-          <span>COUNTDOWN</span>
-          <input type="range" id="countdownRange" min="3" max="15" value="10" step="1">
-          <span id="countdownReadout">10s</span>
+        <div class="countdown-options" id="countdownOptions">
+          <button class="countdown-option" data-secs="3">3s</button>
+          <button class="countdown-option" data-secs="5">5s</button>
+          <button class="countdown-option selected" data-secs="10">10s</button>
         </div>
         <button class="shutter-btn" id="startBtn" aria-label="Start session"></button>
         <div class="shutter-caption">TAP TO BEGIN</div>
-        <button class="change-theme-btn" id="changeThemeBtn">Change frame / pose inspo</button>
+        <button class="inspo-btn" id="inspoBtn">
+          <span id="inspoBtnLabel">+ Add pose inspo (optional)</span>
+        </button>
       </div>
     </section>
 
@@ -84,7 +73,6 @@
       <div class="cam-row">
         <div class="cam-frame" id="camFrameCapture">
           <video id="videoCapture" autoplay playsinline muted></video>
-          <img class="frame-overlay hidden" id="frameOverlayCapture" alt="">
           <div id="countdownNum" class="display"></div>
           <div id="shotCounter">SHOT 1 / 8</div>
           <div id="flashOverlay"></div>
@@ -101,7 +89,7 @@
       <div id="thumbRail"></div>
     </section>
 
-    <!-- SELECT -->
+    <!-- SELECT + DECORATE -->
     <section class="screen" id="screen-select">
       <div class="select-left">
         <div class="subtitle" id="selectHint">Tap 4 photos, in the order you'd like them on your strip</div>
@@ -119,7 +107,12 @@
           <div class="strip-slot" data-slot="2">3</div>
           <div class="strip-slot" data-slot="3">4</div>
           <div class="strip-date" id="stripDate"></div>
+          <div class="sticker-layer" id="stickerLayer"></div>
         </div>
+        <div class="sticker-tray" id="stickerTray"></div>
+        <button class="btn ghost small" id="stickerResetBtn">Clear stickers</button>
+        <div class="mini-label">Strip color</div>
+        <div class="strip-color-row" id="stripColorRow"></div>
       </div>
       <div id="toast"></div>
     </section>
@@ -135,6 +128,7 @@
           <div class="strip-slot" data-pslot="2"></div>
           <div class="strip-slot" data-pslot="3"></div>
           <div class="strip-date" id="printDate"></div>
+          <div class="sticker-layer" id="printStickerLayer"></div>
         </div>
         <div class="slot"></div>
       </div>

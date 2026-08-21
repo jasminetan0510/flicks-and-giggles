@@ -1,42 +1,41 @@
-# Adding a new frame or pose-inspo strip
+# Adding a new sticker or pose-inspo strip
 
 This is the thing you'll do most often. Both asset types are registered in
 one place: **`js/data.js`**. You never need to touch any other JS file to
 add, rename, or remove one.
 
-## Adding a character frame
+## Adding a sticker
 
-A frame is a single image with **real alpha transparency** in the hole
-where the face goes — not a white circle, an actual transparent PNG/WEBP.
-The rest of the character can be any shape; the app draws the frame on top
-of the camera feed and lets the transparent hole show the video through.
+Stickers are decorative images people drag onto their finished 4-photo
+strip on the select screen. Unlike the old character-frame feature, there's
+no alignment or transparency requirement to get right — any image with a
+transparent background looks good; a plain rectangular photo works too, it
+just won't blend in as nicely.
 
-1. **Prepare the image.** Export as PNG (or WEBP — smaller file size, same
-   transparency support) with a transparent background and a transparent
-   hole. Tools like remove.bg work well for cutting out product photos.
-   Roughly square, ~500×500px is plenty — this is displayed small.
-2. **Optimize it** (optional but recommended — keeps the repo and page
-   weight small):
+1. **Prepare the image.** PNG or WEBP, transparent background recommended.
+   Roughly square works best since it's displayed at a fixed width and
+   scales height automatically — very tall or very wide images will look
+   odd at sticker size.
+2. **Optimize it** (optional but recommended):
    ```bash
    # Requires Pillow: pip install pillow
    python3 -c "
    from PIL import Image
-   im = Image.open('my-new-frame.png').convert('RGBA')
+   im = Image.open('my-new-sticker.png').convert('RGBA')
    im.thumbnail((480, 480))
-   im.save('assets/frames/my-new-frame.webp', 'WEBP', quality=82, method=6)
+   im.save('assets/stickers/my-new-sticker.webp', 'WEBP', quality=82, method=6)
    "
    ```
-3. **Drop the file** into `assets/frames/`.
+3. **Drop the file** into `assets/stickers/`.
 4. **Register it** in `js/data.js`:
    ```js
-   export const THEMES = [
-     // ...existing themes...
-     { id: 'my-new-frame', name: 'My New Frame', src: 'assets/frames/my-new-frame.webp' },
+   export const STICKERS = [
+     // ...existing stickers...
+     { id: 'my-new-sticker', name: 'My New Sticker', src: 'assets/stickers/my-new-sticker.webp' },
    ];
    ```
-5. Refresh the page. It'll show up automatically as a new tile on the frame
-   picker screen, previewed as a mini 4-slot photostrip, and will be baked
-   into captured photos the same way the built-in frames are.
+5. Refresh the page. It'll show up automatically in the sticker tray next to
+   the strip preview on the select screen.
 
 That's it — no other file needs to change. `id` just needs to be unique;
 it's not shown anywhere.
@@ -84,11 +83,13 @@ alignment with the actual poses.
      { id: 'my-strip', name: 'My Strip', src: 'assets/inspo/my-strip.webp' },
    ];
    ```
-6. Refresh the page. It'll appear in the "Pose inspo" modal on the theme
-   screen.
+6. Refresh the page. It'll appear in the "Pose inspo" modal on the setup
+   screen. Note that the highlight now advances **every single shot** (not
+   every other shot), cycling through all 4 poses twice over an 8-shot
+   session.
 
 ## Removing an asset
 
-Delete its entry from the `THEMES` or `INSPO_STRIPS` array in `js/data.js`
+Delete its entry from the `STICKERS` or `INSPO_STRIPS` array in `js/data.js`
 (and the file from `assets/`, if you want to clean up). Nothing else
 references assets by id outside that array.

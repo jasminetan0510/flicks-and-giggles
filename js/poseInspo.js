@@ -4,8 +4,8 @@
  * Optional "pose inspo" feature: pick a reference photostrip to shoot
  * alongside. When one is selected, a panel appears next to the camera on
  * both the setup and capture screens, with a highlighted band that steps
- * down through the 4 poses as the 8-shot session progresses (see
- * `currentPoseIndex` in camera.js — 2 shots per pose).
+ * through the 4 poses as the 8-shot session progresses (every single shot —
+ * see `currentPoseIndex` in camera.js).
  * ---------------------------------------------------------------------------
  */
 import { $ } from './dom.js';
@@ -25,6 +25,12 @@ export function initPoseInspo() {
   });
   $('inspoModalCloseBtn').addEventListener('click', () => inspoModal.classList.add('hidden'));
   $('inspoDoneBtn').addEventListener('click', () => inspoModal.classList.add('hidden'));
+
+  // Reflects any selection carried over from a previous session (e.g. after
+  // "Start over") onto the live panels right away, without waiting for the
+  // user to reopen the modal.
+  updateInspoButtonLabel();
+  applyInspoToPanels();
 }
 
 function buildInspoGrid() {
@@ -59,6 +65,7 @@ function selectInspo(strip, tileEl) {
   Array.from(inspoGrid.children).forEach((c) => c.classList.remove('selected'));
   tileEl.classList.add('selected');
   updateInspoButtonLabel();
+  applyInspoToPanels(); // live update — no separate "continue" step anymore
 }
 
 function updateInspoButtonLabel() {
@@ -69,10 +76,9 @@ function updateInspoButtonLabel() {
 
 /**
  * Push the currently selected inspo strip onto both live panels (setup +
- * capture screens), or hide them if none is selected. Called once, right
- * before leaving the theme screen — see main.js.
+ * capture screens), or hide them if none is selected.
  */
-export function applyInspoToPanels() {
+function applyInspoToPanels() {
   const setupPanel = $('inspoPanelSetup');
   const capturePanel = $('inspoPanelCapture');
   if (state.selectedInspo) {

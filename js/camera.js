@@ -1,35 +1,37 @@
 /**
  * camera.js
  * ---------------------------------------------------------------------------
- * Everything to do with the webcam: getUserMedia setup, the adjustable
- * countdown, and the 8-shot capture loop. Each captured photo is a single
- * flat JPEG dataURL with the selected frame already drawn on top — nothing
- * downstream (selection screen, strip preview, download) needs to know
- * frames exist at all.
+ * Everything to do with the webcam: getUserMedia setup, the countdown
+ * (preset lengths + a tick sound for the last 3 seconds), and the 8-shot
+ * capture loop. Each captured photo is a single flat JPEG dataURL — nothing
+ * downstream (selection screen, strip preview, download) does any further
+ * image processing on it.
  * ---------------------------------------------------------------------------
  */
 import { $, showScreen } from './dom.js';
 import { state } from './state.js';
 import { updateInspoHighlight } from './poseInspo.js';
 import { buildSelectGrid } from './selectScreen.js';
+import { unlockAudio, playBeep } from './sound.js';
 
 const video = $('video');
 const videoCapture = $('videoCapture');
 const canvas = $('captureCanvas');
-const frameOverlayCapture = $('frameOverlayCapture');
 
 const TOTAL_SHOTS = 8;
 const POSES_PER_INSPO_STRIP = 4;
-const SHOTS_PER_POSE = TOTAL_SHOTS / POSES_PER_INSPO_STRIP; // 2
+const BEEP_STARTS_AT = 3; // seconds remaining when the countdown tick sound starts
 
 export function initCamera() {
   requestCameraStream();
   $('retryCamBtn').addEventListener('click', requestCameraStream);
 
-  const range = $('countdownRange');
-  range.addEventListener('input', () => {
-    state.countdownSeconds = parseInt(range.value, 10);
-    $('countdownReadout').textContent = state.countdownSeconds + 's';
+  document.querySelectorAll('.countdown-option').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.countdownSeconds = parseInt(btn.dataset.secs, 10);
+      document.querySelectorAll('.countdown-option').forEach((b) => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    });
   });
 
   $('startBtn').addEventListener('click', startCaptureSession);
@@ -65,6 +67,7 @@ function stopStream() {
 
 function startCaptureSession() {
   if (!state.stream) return;
+  unlockAudio(); // must happen inside a user-gesture handler, so it lives here
   state.photos = [];
   state.shotIndex = 0;
   showScreen('capture');
@@ -72,9 +75,14 @@ function startCaptureSession() {
   runCountdownForShot();
 }
 
-/** Which of the 4 inspo poses (0-3) the current shot maps to. 2 shots/pose. */
+/**
+ * Which of the 4 inspo poses (0-3) the current shot maps to. Advances every
+ * single shot (not every-other-shot) so the highlighted pose is always
+ * visibly moving during an 8-shot session — cycling through all 4 poses
+ * twice over.
+ */
 function currentPoseIndex() {
-  return Math.min(POSES_PER_INSPO_STRIP - 1, Math.floor(state.shotIndex / SHOTS_PER_POSE));
+  return state.shotIndex % POSES_PER_INSPO_STRIP;
 }
 
 function runCountdownForShot() {
@@ -87,18 +95,28 @@ function runCountdownForShot() {
   }
 
   let remaining = state.countdownSeconds;
-  $('countdownNum').textContent = remaining;
+  showCountdownTick(remaining);
   clearInterval(state.countdownTimer);
   state.countdownTimer = setInterval(() => {
     remaining -= 1;
     if (remaining > 0) {
-      $('countdownNum').textContent = remaining;
+      showCountdownTick(remaining);
     } else {
       clearInterval(state.countdownTimer);
       $('countdownNum').textContent = '';
       takePhoto();
     }
   }, 1000);
+}
+
+/** Updates the big countdown number and plays the tick beep for the last 3 seconds. */
+function showCountdownTick(remaining) {
+  $('countdownNum').textContent = remaining;
+  if (remaining <= BEEP_STARTS_AT && remaining >= 1) {
+    // pitch rises slightly as it counts down, for a little anticipation
+    const freq = 550 + (BEEP_STARTS_AT - remaining) * 150;
+    playBeep(freq);
+  }
 }
 
 function takePhoto() {
@@ -121,19 +139,6 @@ function takePhoto() {
   ctx.scale(-1, 1);
   ctx.drawImage(videoCapture, sx, sy, size, size, 0, 0, size, size);
   ctx.restore();
-
-  // Composite the selected frame on top (never mirrored — it isn't camera
-  // footage), using the same "contain" fit as the CSS overlay on screen.
-  if (state.selectedTheme && frameOverlayCapture.complete && frameOverlayCapture.naturalWidth) {
-    const nw = frameOverlayCapture.naturalWidth;
-    const nh = frameOverlayCapture.naturalHeight;
-    const scale = Math.min(size / nw, size / nh);
-    const dw = nw * scale;
-    const dh = nh * scale;
-    const dx = (size - dw) / 2;
-    const dy = (size - dh) / 2;
-    ctx.drawImage(frameOverlayCapture, dx, dy, dw, dh);
-  }
 
   const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
   state.photos.push(dataUrl);

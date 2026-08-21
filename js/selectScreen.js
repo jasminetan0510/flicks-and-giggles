@@ -9,6 +9,7 @@
 import { $ } from './dom.js';
 import { state } from './state.js';
 import { dateStamp } from './utils.js';
+import { renderPlacedStickers } from './stickers.js';
 
 const grid = $('grid');
 const doneBtn = $('doneBtn');
@@ -17,8 +18,10 @@ const toast = $('toast');
 export function initSelectScreen() {
   $('resetSelBtn').addEventListener('click', () => {
     state.selectedOrder = [];
+    state.placedStickers = []; // stickers were positioned relative to the old picks
     refreshGridBadges();
     updateStripPreview();
+    renderPlacedStickers();
     updateDoneState();
   });
 
@@ -32,6 +35,8 @@ export function initSelectScreen() {
 export function buildSelectGrid() {
   grid.innerHTML = '';
   state.selectedOrder = [];
+  state.placedStickers = []; // fresh session, fresh strip — clear any leftover stickers
+  renderPlacedStickers();
   state.photos.forEach((src, i) => {
     const item = document.createElement('button');
     item.className = 'grid-item';
